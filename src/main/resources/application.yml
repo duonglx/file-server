@@ -1,19 +1,20 @@
 
 server:
-  port: 8888
+  #port: 8888
   session:
-    timeout: 10 #http session timeout in minutes
-#  port: 8443
-#  ssl:
-#    key-store: classpath:keystore.jks
-#    key-store-password: secret
-#    keyStoreType: JKS
-#    keyAlias: localhost
+    timeout: 525600 #http session timeout in minutes
+  port: 8443
+  ssl:
+    key-store: classpath:keystore.jks
+    key-store-password: secret
+    keyStoreType: JKS
+    keyAlias: localhost
 
 fileserver:
-   home: /home/juraj/Downloads
+   home: D:/fileserver/files
    data:
-     storage: inmemory
+     storage: filesystem
+     basedir: D:/fileserver/data
    anonymous:        #setting for anonymous users
      role: anonymous #role of anonymous users
    admin:            #setting for admin users

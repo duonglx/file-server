@@ -1,6 +1,7 @@
 package itx.fileserver.services;
 
 import itx.fileserver.config.FileServerConfig;
+import itx.fileserver.exception.FileStorageException;
 import itx.fileserver.services.data.AuditService;
 import itx.fileserver.dto.AuditQuery;
 import itx.fileserver.dto.AuditRecord;
@@ -123,7 +124,18 @@ public class FileServiceImpl implements FileService {
     public void saveFile(UserData userData, Path filePath, InputStream inputStream) throws IOException, OperationNotAllowedException {
         LOG.info("saveFile: {}", filePath);
         verifyReadAndWriteAccess(userData, filePath);
+
         Path resolvedFilePath = this.fileStorageLocation.resolve(filePath).normalize();
+        // Lấy đường dẫn thư mục chứa file
+        //Path dirPath = this.fileStorageLocation.resolve(filePath.getParent()).normalize();
+        if (!Files.exists(resolvedFilePath.getParent())) {
+            try {
+                // Tạo đường dẫn thư mục
+                Files.createDirectories(resolvedFilePath.getParent());
+            } catch (Exception ex) {
+                throw new FileStorageException("Could not create the directory where the uploaded files will be stored.", ex);
+            }
+        }
         byte[] buffer = new byte[inputStream.available()];
         inputStream.read(buffer);
         File targetFile = resolvedFilePath.toFile();

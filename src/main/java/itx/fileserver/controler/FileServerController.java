@@ -1,6 +1,7 @@
 package itx.fileserver.controler;
 
 import itx.fileserver.dto.MoveRequest;
+import itx.fileserver.payload.UploadFileResponse;
 import itx.fileserver.services.FileService;
 import itx.fileserver.services.OperationNotAllowedException;
 import itx.fileserver.services.SecurityService;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.FileNotFoundException;
@@ -105,16 +107,26 @@ public class FileServerController {
     }
 
     @PostMapping(UPLOAD_PREFIX + "**")
-    public ResponseEntity<Resource> fileUpload(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<UploadFileResponse> fileUpload(@RequestParam("file") MultipartFile file) {
         try {
             String contextPath = httpServletRequest.getRequestURI();
             SessionId sessionId = new SessionId(httpServletRequest.getSession().getId());
             Optional<UserData> userData = securityService.isAuthorized(sessionId);
             if (userData.isPresent()) {
-                Path filePath = Paths.get(contextPath.substring((URI_PREFIX + UPLOAD_PREFIX).length()));
+                String fileURI = contextPath.substring((URI_PREFIX + UPLOAD_PREFIX).length());
+                Path filePath = Paths.get(fileURI);
                 LOG.info("upload: {}", filePath);
                 fileService.saveFile(userData.get(), filePath, file.getInputStream());
-                return ResponseEntity.ok().build();
+
+
+                String fileDownloadUri = ServletUriComponentsBuilder.fromCurrentContextPath()
+                        .path(URI_PREFIX + DOWNLOAD_PREFIX)
+                        .path(fileURI)
+                        .toUriString();
+                // TODO
+                return ResponseEntity.ok(new UploadFileResponse(fileURI, fileDownloadUri,
+                        file.getContentType(), file.getSize()));
+
             }
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         } catch (IOException e) {
